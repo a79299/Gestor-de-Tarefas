@@ -3,6 +3,7 @@ import json
 import os
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
+from authentication import authenticate_user  # Importa a autenticação
 
 # Carregar variáveis de ambiente do ficheiro .env
 load_dotenv()
@@ -196,6 +197,12 @@ def main(page: ft.Page):
     page.title = "Gestor de Tarefas"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.scroll = ft.ScrollMode.ADAPTIVE
-    page.add(TodoApp(page))
 
-ft.app(main)
+    def start_app():
+        page.clean()  # Limpa a tela após autenticação
+        page.add(TodoApp(page))
+
+    # 🚀 Autenticação antes de carregar o app
+    authenticate_user(page, on_auth_success=start_app)
+
+ft.app(main, port=1234, view=ft.WEB_BROWSER)
