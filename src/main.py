@@ -3,10 +3,13 @@ import json
 import os
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
+from authentication import authenticate_user  # Importa a autenticação
 
 # Carregar variáveis de ambiente do ficheiro .env
 load_dotenv()
+
 SECRET = os.getenv("ENCRYPTION_KEY")
+APP_PORT = int(os.getenv("APP_PORT", 1234))  # Porta da aplicação com valor padrão 1234
 
 if not SECRET:
     raise ValueError("A chave de encriptação não foi encontrada")
@@ -196,6 +199,12 @@ def main(page: ft.Page):
     page.title = "Gestor de Tarefas"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.scroll = ft.ScrollMode.ADAPTIVE
-    page.add(TodoApp(page))
 
-ft.app(main)
+    def start_app():
+        page.clean()  # Limpa a tela após autenticação
+        page.add(TodoApp(page))
+
+    # 🚀 Autenticação antes de carregar o app
+    authenticate_user(page, on_auth_success=start_app)
+
+ft.app(main, port=APP_PORT, view=ft.WEB_BROWSER)
