@@ -91,7 +91,7 @@ class TodoApp(ft.Column):
         self.width = 600
         self.controls = [
             ft.Row(
-                [ft.Text(value="Todos", theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM)],
+                [ft.Text(value="Tarefas", theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM)],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
             ft.Row(
@@ -158,7 +158,7 @@ class TodoApp(ft.Column):
         self.items_left.value = f"{count} active item(s) left"
 
 def main(page: ft.Page):
-    page.title = "ToDo App"
+    page.title = "Gestor de Tarefas"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.scroll = ft.ScrollMode.ADAPTIVE
 
