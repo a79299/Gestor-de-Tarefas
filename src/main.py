@@ -1,4 +1,17 @@
 import flet as ft
+import json
+import os
+from cryptography.fernet import Fernet
+from dotenv import load_dotenv
+
+# Carregar variáveis de ambiente do ficheiro .env
+load_dotenv()
+SECRET = os.getenv("ENCRYPTION_KEY")
+
+if not SECRET:
+    raise ValueError("A chave de encriptação não foi encontrada")
+
+encryptor = Fernet(SECRET)
 
 class Task(ft.Column):
     def __init__(self, task_name, task_status_change, task_delete):
@@ -71,24 +84,20 @@ class Task(ft.Column):
         self.task_delete(self)
 
 class TodoApp(ft.Column):
-    # application's root control is a Column containing all other controls
-    def __init__(self):
+    def __init__(self, page):
         super().__init__()
+        self.page = page
         self.new_task = ft.TextField(
             hint_text="What needs to be done?", on_submit=self.add_clicked, expand=True
         )
         self.tasks = ft.Column()
-
         self.filter = ft.Tabs(
             scrollable=False,
             selected_index=0,
             on_change=self.tabs_changed,
             tabs=[ft.Tab(text="all"), ft.Tab(text="active"), ft.Tab(text="completed")],
         )
-
         self.items_left = ft.Text("0 items left")
-
-        self.width = 600
         self.controls = [
             ft.Row(
                 [ft.Text(value="Tarefas", theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM)],
@@ -97,9 +106,7 @@ class TodoApp(ft.Column):
             ft.Row(
                 controls=[
                     self.new_task,
-                    ft.FloatingActionButton(
-                        icon=ft.icons.ADD, on_click=self.add_clicked
-                    ),
+                    ft.FloatingActionButton(icon=ft.icons.ADD, on_click=self.add_clicked),
                 ],
             ),
             ft.Column(
@@ -112,14 +119,14 @@ class TodoApp(ft.Column):
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
                             self.items_left,
-                            ft.OutlinedButton(
-                                text="Clear completed", on_click=self.clear_clicked
-                            ),
+                            ft.OutlinedButton(text="Clear completed", on_click=self.clear_clicked),
                         ],
                     ),
                 ],
             ),
         ]
+        self.page.add(self)
+        self.load_tasks()
 
     def add_clicked(self, e):
         if self.new_task.value:
@@ -127,13 +134,16 @@ class TodoApp(ft.Column):
             self.tasks.controls.append(task)
             self.new_task.value = ""
             self.new_task.focus()
+            self.save_tasks()
             self.update()
 
     def task_status_change(self, task):
+        self.save_tasks()
         self.update()
 
     def task_delete(self, task):
         self.tasks.controls.remove(task)
+        self.save_tasks()
         self.update()
 
     def tabs_changed(self, e):
@@ -143,26 +153,49 @@ class TodoApp(ft.Column):
         for task in self.tasks.controls[:]:
             if task.completed:
                 self.task_delete(task)
+        self.save_tasks()
 
     def before_update(self):
-        status = self.filter.tabs[self.filter.selected_index].text
-        count = 0
-        for task in self.tasks.controls:
-            task.visible = (
-                status == "all"
-                or (status == "active" and task.completed == False)
-                or (status == "completed" and task.completed)
-            )
-            if not task.completed:
-                count += 1
-        self.items_left.value = f"{count} active item(s) left"
+        if hasattr(self, "filter") and self.filter is not None:
+            status = self.filter.tabs[self.filter.selected_index].text
+            count = 0
+            for task in self.tasks.controls:
+                task.visible = (
+                    status == "all"
+                    or (status == "active" and task.completed is False)
+                    or (status == "completed" and task.completed)
+                )
+                if not task.completed:
+                    count += 1
+            self.items_left.value = f"{count} active item(s) left"
+
+    def save_tasks(self):
+        tasks_data = [
+            {"name": task.display_task.label, "completed": task.completed}
+            for task in self.tasks.controls
+        ]
+        encrypted_data = encryptor.encrypt(json.dumps(tasks_data).encode()).decode()
+        self.page.client_storage.set("tasks", encrypted_data)
+
+    def load_tasks(self):
+        saved_tasks = self.page.client_storage.get("tasks")
+        if saved_tasks:
+            try:
+                decrypted_data = encryptor.decrypt(saved_tasks.encode()).decode()
+                tasks_data = json.loads(decrypted_data)
+                for task_data in tasks_data:
+                    task = Task(task_data["name"], self.task_status_change, self.task_delete)
+                    task.completed = task_data["completed"]
+                    task.display_task.value = task_data["completed"]
+                    self.tasks.controls.append(task)
+            except Exception as e:
+                print("Erro ao desencriptar os dados:", e)
+        self.update()
 
 def main(page: ft.Page):
     page.title = "Gestor de Tarefas"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.scroll = ft.ScrollMode.ADAPTIVE
-
-    # create app control and add it to the page
-    page.add(TodoApp())
+    page.add(TodoApp(page))
 
 ft.app(main)
