@@ -1,5 +1,17 @@
 import flet as ft
 import json
+import os
+from cryptography.fernet import Fernet
+from dotenv import load_dotenv
+
+# Carregar variáveis de ambiente do ficheiro .env
+load_dotenv()
+SECRET = os.getenv("ENCRYPTION_KEY")
+
+if not SECRET:
+    raise ValueError("A chave de encriptação não foi encontrada")
+
+encryptor = Fernet(SECRET)
 
 class Task(ft.Column):
     def __init__(self, task_name, task_status_change, task_delete):
@@ -74,21 +86,18 @@ class Task(ft.Column):
 class TodoApp(ft.Column):
     def __init__(self, page):
         super().__init__()
-        self.page = page  # Referência para a página
+        self.page = page
         self.new_task = ft.TextField(
             hint_text="What needs to be done?", on_submit=self.add_clicked, expand=True
         )
         self.tasks = ft.Column()
-
         self.filter = ft.Tabs(
             scrollable=False,
             selected_index=0,
             on_change=self.tabs_changed,
             tabs=[ft.Tab(text="all"), ft.Tab(text="active"), ft.Tab(text="completed")],
         )
-
         self.items_left = ft.Text("0 items left")
-
         self.controls = [
             ft.Row(
                 [ft.Text(value="Tarefas", theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM)],
@@ -116,7 +125,6 @@ class TodoApp(ft.Column):
                 ],
             ),
         ]
-
         self.page.add(self)
         self.load_tasks()
 
@@ -166,17 +174,22 @@ class TodoApp(ft.Column):
             {"name": task.display_task.label, "completed": task.completed}
             for task in self.tasks.controls
         ]
-        self.page.client_storage.set("tasks", json.dumps(tasks_data))
+        encrypted_data = encryptor.encrypt(json.dumps(tasks_data).encode()).decode()
+        self.page.client_storage.set("tasks", encrypted_data)
 
     def load_tasks(self):
         saved_tasks = self.page.client_storage.get("tasks")
         if saved_tasks:
-            tasks_data = json.loads(saved_tasks)
-            for task_data in tasks_data:
-                task = Task(task_data["name"], self.task_status_change, self.task_delete)
-                task.completed = task_data["completed"]
-                task.display_task.value = task_data["completed"]
-                self.tasks.controls.append(task)
+            try:
+                decrypted_data = encryptor.decrypt(saved_tasks.encode()).decode()
+                tasks_data = json.loads(decrypted_data)
+                for task_data in tasks_data:
+                    task = Task(task_data["name"], self.task_status_change, self.task_delete)
+                    task.completed = task_data["completed"]
+                    task.display_task.value = task_data["completed"]
+                    self.tasks.controls.append(task)
+            except Exception as e:
+                print("Erro ao desencriptar os dados:", e)
         self.update()
 
 def main(page: ft.Page):
