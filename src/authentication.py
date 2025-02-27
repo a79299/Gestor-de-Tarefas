@@ -9,6 +9,7 @@ load_dotenv()
 # Credenciais do GitHub
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+APP_PORT = os.getenv("APP_PORT")  # Porta da aplicação (padrão: 1234)
 
 # Verificar se as credenciais foram fornecidas corretamente
 if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
@@ -18,7 +19,7 @@ if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
 provider = GitHubOAuthProvider(
     client_id=GITHUB_CLIENT_ID,
     client_secret=GITHUB_CLIENT_SECRET, 
-    redirect_url="http://localhost:1234/oauth_callback",
+    redirect_url=f"http://localhost:{APP_PORT}/oauth_callback",
 )
 
 def authenticate_user(page: ft.Page, on_auth_success):
@@ -43,7 +44,14 @@ def authenticate_user(page: ft.Page, on_auth_success):
                 ft.Row(
                     [
                         ft.Text(f"Bem-vindo, {user['name']}!", size=20),
-                        ft.Image(src=user.get("picture", "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"), width=50, height=50),
+                        ft.Image(
+                            src=user.get(
+                                "picture",
+                                "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                            ),
+                            width=50,
+                            height=50,
+                        ),
                         ft.ElevatedButton("Logout", on_click=logout_click),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,

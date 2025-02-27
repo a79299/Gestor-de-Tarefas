@@ -7,7 +7,9 @@ from authentication import authenticate_user  # Importa a autenticação
 
 # Carregar variáveis de ambiente do ficheiro .env
 load_dotenv()
+
 SECRET = os.getenv("ENCRYPTION_KEY")
+APP_PORT = int(os.getenv("APP_PORT", 1234))  # Porta da aplicação com valor padrão 1234
 
 if not SECRET:
     raise ValueError("A chave de encriptação não foi encontrada")
@@ -205,4 +207,4 @@ def main(page: ft.Page):
     # 🚀 Autenticação antes de carregar o app
     authenticate_user(page, on_auth_success=start_app)
 
-ft.app(main, port=1234, view=ft.WEB_BROWSER)
+ft.app(main, port=APP_PORT, view=ft.WEB_BROWSER)
