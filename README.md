@@ -60,4 +60,4 @@ flet run main.py --web --port 1234
 ```
 Acesse no navegador: `http://127.0.0.1:1234`
 
-**Dica**: Caso encontre algum problema, verifique se todas as dependências estão instaladas e se as variáveis de ambiente estão configuradas corretamente. 🚀
+**Dica**: Caso encontre algum problema, verifique se todas as dependências estão instaladas e se as variáveis de ambiente estão configuradas corretamente.
