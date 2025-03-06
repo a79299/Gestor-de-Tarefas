@@ -13,7 +13,6 @@ APP_PORT = int(os.getenv("APP_PORT", 1234))  # Porta da aplicação com valor pa
 
 if not SECRET:
     raise ValueError("A chave de encriptação não foi encontrada")
-
 encryptor = Fernet(SECRET)
 
 class Task(ft.Column):
@@ -198,13 +197,27 @@ class TodoApp(ft.Column):
 def main(page: ft.Page):
     page.title = "Gestor de Tarefas"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.scroll = ft.ScrollMode.ADAPTIVE
+    page.favicon = "/assets/favicon.ico"
+
+    # Spinner de carregamento centralizado e menor
+    loading_spinner = ft.ProgressRing(width=30, height=30)  # Reduzido para 30x30
+    loading_view = ft.Column(
+        controls=[
+            ft.Text("Esperando o login.....", size=16),  # Texto menor
+            loading_spinner
+        ],
+        alignment=ft.MainAxisAlignment.CENTER,  # Alinhado no centro
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER  # Centralizado horizontalmente
+    )
+    page.add(loading_view)
 
     def start_app():
         page.clean()  # Limpa a tela após autenticação
         page.add(TodoApp(page))
 
-    # 🚀 Autenticação antes de carregar o app
+    # Autenticação antes de carregar o app
     authenticate_user(page, on_auth_success=start_app)
 
 ft.app(main, port=APP_PORT, view=ft.WEB_BROWSER)
