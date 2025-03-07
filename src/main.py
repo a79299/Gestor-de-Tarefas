@@ -9,7 +9,6 @@ from authentication import authenticate_user  # Importa a autenticação
 load_dotenv()
 
 SECRET = os.getenv("ENCRYPTION_KEY")
-APP_PORT = int(os.getenv("APP_PORT", 1234))  # Porta da aplicação com valor padrão 1234
 
 if not SECRET:
     raise ValueError("A chave de encriptação não foi encontrada")
@@ -199,25 +198,22 @@ def main(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.scroll = ft.ScrollMode.ADAPTIVE
-    page.favicon = "/assets/favicon.ico"
 
-    # Spinner de carregamento centralizado e menor
-    loading_spinner = ft.ProgressRing(width=30, height=30)  # Reduzido para 30x30
+    loading_spinner = ft.ProgressRing(width=30, height=30)
     loading_view = ft.Column(
         controls=[
-            ft.Text("Esperando o login.....", size=16),  # Texto menor
+            ft.Text("Esperando o login.....", size=16),
             loading_spinner
         ],
-        alignment=ft.MainAxisAlignment.CENTER,  # Alinhado no centro
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER  # Centralizado horizontalmente
+        alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
     page.add(loading_view)
 
     def start_app():
-        page.clean()  # Limpa a tela após autenticação
+        page.clean()
         page.add(TodoApp(page))
 
-    # Autenticação antes de carregar o app
     authenticate_user(page, on_auth_success=start_app)
 
-ft.app(main, port=APP_PORT, view=ft.WEB_BROWSER)
+ft.app(target=main, view=ft.WEB_BROWSER)

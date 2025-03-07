@@ -9,21 +9,20 @@ load_dotenv()
 # Credenciais do GitHub
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-APP_PORT = os.getenv("APP_PORT")  # Porta da aplicação (padrão: 1234)
+REDIRECT_URL = os.getenv("REDIRECT_URL")  # URL correta do Replit
 
 # Verificar se as credenciais foram fornecidas corretamente
-if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
-    raise ValueError("As credenciais do GitHub OAuth não foram encontradas no ambiente.")
+if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET or not REDIRECT_URL:
+    raise ValueError("As credenciais do GitHub OAuth ou a REDIRECT_URL não foram encontradas no ambiente.")
 
 # Configurar provedor OAuth do GitHub
 provider = GitHubOAuthProvider(
     client_id=GITHUB_CLIENT_ID,
     client_secret=GITHUB_CLIENT_SECRET, 
-    redirect_url=f"http://localhost:{APP_PORT}/oauth_callback",
+    redirect_url=REDIRECT_URL,  # Agora pega do .env para ser compatível com o Replit
 )
 
 def authenticate_user(page: ft.Page, on_auth_success):
-
     def login_click(e):
         page.login(provider)
 
@@ -32,7 +31,7 @@ def authenticate_user(page: ft.Page, on_auth_success):
         page.session.clear()
         page.clean()
         show_login()
-
+        
     def on_login(e):
         if e.error:
             page.clean()
