@@ -198,22 +198,25 @@ def main(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.scroll = ft.ScrollMode.ADAPTIVE
+    page.favicon = "/assets/favicon.ico"
 
-    loading_spinner = ft.ProgressRing(width=30, height=30)
+    # Spinner de carregamento centralizado e menor
+    loading_spinner = ft.ProgressRing(width=30, height=30)  # Reduzido para 30x30
     loading_view = ft.Column(
         controls=[
-            ft.Text("Esperando o login.....", size=16),
+            ft.Text("Esperando o login.....", size=16),  # Texto menor
             loading_spinner
         ],
-        alignment=ft.MainAxisAlignment.CENTER,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        alignment=ft.MainAxisAlignment.CENTER,  # Alinhado no centro
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER  # Centralizado horizontalmente
     )
     page.add(loading_view)
 
     def start_app():
-        page.clean()
+        page.clean()  # Limpa a tela após autenticação
         page.add(TodoApp(page))
 
+    # Autenticação antes de carregar o app
     authenticate_user(page, on_auth_success=start_app)
 
-ft.app(target=main, view=ft.WEB_BROWSER)
+ft.app(target=main, view=ft.WEB_BROWSER, port=1234)

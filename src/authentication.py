@@ -9,20 +9,20 @@ load_dotenv()
 # Credenciais do GitHub
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
-REDIRECT_URL = os.getenv("REDIRECT_URL")  # URL correta do Replit
 
 # Verificar se as credenciais foram fornecidas corretamente
-if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET or not REDIRECT_URL:
-    raise ValueError("As credenciais do GitHub OAuth ou a REDIRECT_URL não foram encontradas no ambiente.")
+if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
+    raise ValueError("As credenciais do GitHub OAuth não foram encontradas no ambiente.")
 
 # Configurar provedor OAuth do GitHub
 provider = GitHubOAuthProvider(
     client_id=GITHUB_CLIENT_ID,
-    client_secret=GITHUB_CLIENT_SECRET, 
-    redirect_url=REDIRECT_URL,  # Agora pega do .env para ser compatível com o Replit
+    client_secret=GITHUB_CLIENT_SECRET,
+    redirect_url="http://localhost:1234/oauth_callback"
 )
 
 def authenticate_user(page: ft.Page, on_auth_success):
+    
     def login_click(e):
         page.login(provider)
 
@@ -31,34 +31,41 @@ def authenticate_user(page: ft.Page, on_auth_success):
         page.session.clear()
         page.clean()
         show_login()
-        
+
     def on_login(e):
         if e.error:
             page.clean()
             page.add(ft.Text("Erro ao autenticar!", color="red"))
-        else:
+            return
+
+        user = page.auth.user
+        if not user:  # Verifica se user é None
             page.clean()
-            user = page.auth.user
-            page.add(
-                ft.Row(
-                    [
-                        ft.Text(f"Bem-vindo, {user['name']}!", size=20),
-                        ft.Image(
-                            src=user.get(
-                                "picture",
-                                "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                            ),
-                            width=50,
-                            height=50,
+            page.add(ft.Text("Erro: Nenhum utilizador retornado pela autenticação.", color="red"))
+            return
+
+        page.clean()
+        page.add(
+            ft.Row(
+                [
+                    ft.Text(f"Bem-vindo, {user.get('name', 'Utilizador')}!", size=20),
+                    ft.Image(
+                        src=user.get(
+                            "picture",
+                            "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
                         ),
-                        ft.ElevatedButton("Logout", on_click=logout_click),
-                    ],
-                    alignment=ft.MainAxisAlignment.CENTER,
-                )
+                        width=50,
+                        height=50,
+                    ),
+                    ft.ElevatedButton("Logout", on_click=logout_click),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
             )
-            on_auth_success()  # Chama a função que inicializa o app
+        )
+        on_auth_success()  # Chama a função que inicializa o app
 
     def show_login():
+        page.clean()
         page.add(ft.ElevatedButton("Login com GitHub", on_click=login_click))
 
     page.on_login = on_login
